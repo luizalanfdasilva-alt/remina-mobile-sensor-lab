@@ -1,1 +1,3864 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#050505">
+<meta name="description" content="REMINA Mobile Sensor Lab — laboratório portátil de percepção, contexto e memória sensorial.">
+<title>REMINA Mobile Sensor Lab</title>
+
+<style>
+:root{
+  --bg:#050505;
+  --panel:#101010;
+  --panel2:#171717;
+  --line:#2a2a2a;
+  --text:#f5f5f5;
+  --muted:#9d9d9d;
+  --gold:#e6b84b;
+  --green:#42d392;
+  --yellow:#f4cf58;
+  --orange:#ff9e43;
+  --red:#ff5d5d;
+  --blue:#6db7ff
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent
+}
+
+html,body{
+  margin:0;
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+
+body{
+  padding-bottom:30px
+}
+
+button,input,textarea{
+  font:inherit
+}
+
+button{
+  border:0;
+  color:var(--text);
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px 14px;
+  font-weight:700;
+  cursor:pointer
+}
+
+button:active{
+  transform:scale(.98)
+}
+
+button.primary{
+  background:var(--gold);
+  color:#111;
+  border-color:var(--gold)
+}
+
+button.danger{
+  border-color:#653030
+}
+
+button.small{
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:12px
+}
+
+button:disabled{
+  opacity:.45;
+  cursor:not-allowed
+}
+
+input,textarea{
+  width:100%;
+  background:#0c0c0c;
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  outline:none
+}
+
+textarea{
+  min-height:80px;
+  resize:vertical
+}
+
+.container{
+  width:min(100%,720px);
+  margin:auto;
+  padding:12px
+}
+
+.header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:rgba(5,5,5,.94);
+  backdrop-filter:blur(12px);
+  padding:12px 4px;
+  border-bottom:1px solid var(--line)
+}
+
+.brand{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center
+}
+
+.brand h1{
+  font-size:19px;
+  margin:0
+}
+
+.brand small{
+  color:var(--muted)
+}
+
+.status-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--red);
+  display:inline-block;
+  margin-right:6px
+}
+
+.status-dot.on{
+  background:var(--green)
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:14px;
+  margin:12px 0;
+  box-shadow:0 10px 30px rgba(0,0,0,.16)
+}
+
+.card h2{
+  font-size:15px;
+  margin:0 0 10px
+}
+
+.sub{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.45
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px
+}
+
+.grid3{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px
+}
+
+.metric{
+  background:#0b0b0b;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:10px
+}
+
+.metric b{
+  font-size:21px;
+  display:block
+}
+
+.metric span{
+  font-size:11px;
+  color:var(--muted)
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  border:1px solid var(--line);
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:11px;
+  color:var(--muted)
+}
+
+.badge.on{
+  color:var(--green);
+  border-color:#245d47
+}
+
+.badge.warn{
+  color:var(--yellow);
+  border-color:#66551f
+}
+
+.badge.err{
+  color:var(--red);
+  border-color:#653030
+}
+
+.formula{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:#090909;
+  border:1px dashed #3a3a3a;
+  border-radius:12px;
+  padding:10px;
+  font-size:11px;
+  line-height:1.65;
+  overflow:auto
+}
+
+.camera-wrap{
+  position:relative;
+  background:#000;
+  border-radius:18px;
+  overflow:hidden;
+  aspect-ratio:9/16;
+  max-height:72vh
+}
+
+.camera-wrap video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block
+}
+
+.camera-overlay{
+  position:absolute;
+  inset:0;
+  pointer-events:none
+}
+
+.topbar{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:linear-gradient(rgba(0,0,0,.7),transparent)
+}
+
+.camera-actions{
+  position:absolute;
+  left:10px;
+  right:10px;
+  bottom:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+
+.capture{
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  background:rgba(255,255,255,.14);
+  border:4px solid white;
+  padding:0
+}
+
+.capture.recording{
+  border-color:var(--red);
+  background:rgba(255,0,0,.2)
+}
+
+.side-actions{
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+
+.round{
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  padding:0;
+  background:rgba(0,0,0,.52);
+  backdrop-filter:blur(5px)
+}
+
+.marker{
+  position:absolute;
+  pointer-events:none;
+  padding:6px 8px;
+  border:1px solid rgba(255,255,255,.35);
+  border-radius:999px;
+  background:rgba(0,0,0,.48);
+  font-size:10px;
+  backdrop-filter:blur(5px);
+  transform:translate3d(0,0,0);
+  will-change:transform,opacity
+}
+
+.m1{
+  top:28%;
+  left:12%
+}
+
+.m2{
+  top:43%;
+  right:9%
+}
+
+.m3{
+  top:58%;
+  left:18%
+}
+
+.m4{
+  top:67%;
+  right:14%
+}
+
+.camera-gate{
+  position:absolute;
+  inset:0;
+  z-index:5;
+  background:rgba(0,0,0,.9);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:25px;
+  text-align:center
+}
+
+.camera-gate.hidden{
+  display:none
+}
+
+.gate-box{
+  max-width:360px
+}
+
+.gate-box h2{
+  font-size:28px;
+  margin:0 0 8px
+}
+
+.gate-box p{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5
+}
+
+.progress{
+  height:7px;
+  background:#252525;
+  border-radius:99px;
+  overflow:hidden;
+  margin:8px 0
+}
+
+.progress>i{
+  display:block;
+  height:100%;
+  width:0;
+  background:var(--gold);
+  transition:width .25s
+}
+
+.wave{
+  display:flex;
+  align-items:center;
+  gap:2px;
+  height:52px;
+  background:#080808;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:4px;
+  overflow:hidden
+}
+
+.wave i{
+  display:block;
+  flex:1;
+  min-width:2px;
+  height:5%;
+  background:#aaa;
+  border-radius:2px;
+  transition:height .05s
+}
+
+.compass{
+  width:130px;
+  height:130px;
+  border:1px solid var(--line);
+  border-radius:50%;
+  margin:8px auto;
+  position:relative;
+  background:radial-gradient(circle,#151515,#080808)
+}
+
+.compass:before,
+.compass:after{
+  content:"";
+  position:absolute;
+  inset:10px;
+  border:1px dashed #333;
+  border-radius:50%
+}
+
+.needle{
+  position:absolute;
+  width:4px;
+  height:54px;
+  background:var(--gold);
+  left:calc(50% - 2px);
+  top:11px;
+  transform-origin:50% 54px;
+  transition:transform .25s
+}
+
+.north{
+  position:absolute;
+  top:5px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:10px;
+  color:var(--gold)
+}
+
+.log{
+  max-height:170px;
+  overflow:auto;
+  background:#090909;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px;
+  font:11px/1.5 ui-monospace,monospace;
+  color:#bbb
+}
+
+.note{
+  padding:8px 0;
+  border-bottom:1px solid var(--line);
+  font-size:12px
+}
+
+.note:last-child{
+  border-bottom:0
+}
+
+.gallery{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px
+}
+
+.gallery-item{
+  background:#090909;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden
+}
+
+.gallery-item img,
+.gallery-item video{
+  width:100%;
+  display:block;
+  aspect-ratio:1;
+  object-fit:cover;
+  background:#000
+}
+
+.gallery-item .meta{
+  padding:8px;
+  font-size:11px;
+  color:#bbb
+}
+
+.row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap
+}
+
+.row>*{
+  flex:1
+}
+
+.fixed{
+  position:sticky;
+  bottom:10px;
+  z-index:15;
+  margin-top:14px
+}
+
+.fixed button{
+  width:100%;
+  font-size:16px;
+  padding:16px
+}
+
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  transform:translate(-50%,20px);
+  opacity:0;
+  z-index:100;
+  background:#f5f5f5;
+  color:#111;
+  padding:11px 15px;
+  border-radius:12px;
+  font-size:12px;
+  font-weight:700;
+  pointer-events:none;
+  transition:.25s
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0)
+}
+
+.hidden{
+  display:none!important
+}
+
+.gold{
+  color:var(--gold)
+}
+
+.green{
+  color:var(--green)
+}
+
+.muted{
+  color:var(--muted)
+}
+
+@media(min-width:700px){
+  .camera-wrap{
+    max-height:640px
+  }
+
+  .grid{
+    grid-template-columns:repeat(3,1fr)
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header class="header">
+  <div class="brand">
+    <div>
+      <h1>REMINA Mobile Sensor Lab</h1>
+      <small>Primeiro laboratório portátil • NEXUS TACTILE + AURA SUIT</small>
+    </div>
+
+    <span id="engineDot" class="status-dot"></span>
+  </div>
+</header>
+
+<section class="card">
+
+  <div class="row">
+    <button id="initBtn" class="primary">
+      INICIAR LABORATÓRIO
+    </button>
+
+    <button id="helpBtn" class="small">
+      Como funciona
+    </button>
+  </div>
+
+  <p id="initMsg" class="sub">
+    O navegador solicitará apenas as permissões necessárias quando você ativar cada recurso.
+  </p>
+
+</section>
+
+<section class="card">
+
+  <h2>📷 CÂMERA REAL</h2>
+
+  <div class="camera-wrap" id="cameraWrap">
+
+    <video
+      id="camera"
+      autoplay
+      playsinline
+      muted>
+    </video>
+
+    <div id="cameraGate" class="camera-gate">
+
+      <div class="gate-box">
+
+        <h2>REMINA</h2>
+
+        <p>
+          A câmera é usada para observar o ambiente,
+          capturar fotos/vídeos e, quando necessário,
+          estimar luminosidade por imagem.
+        </p>
+
+        <button id="openCamera" class="primary">
+          ABRIR CÂMERA
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="camera-overlay">
+
+      <div class="topbar">
+
+        <span
+          class="badge"
+          id="cameraStatus">
+          Câmera desligada
+        </span>
+
+        <span
+          class="badge"
+          id="liveSensor">
+          LAB
+        </span>
+
+      </div>
+
+      <span class="marker m1">
+        ♿ Acessibilidade
+      </span>
+
+      <span class="marker m2">
+        🔊 Som
+      </span>
+
+      <span class="marker m3">
+        🌿 Cheiro
+      </span>
+
+      <span class="marker m4">
+        ✋ Sensação
+      </span>
+
+      <div class="camera-actions">
+
+        <div class="side-actions">
+
+          <button
+            class="round"
+            id="galleryBtn"
+            title="Galeria">
+            🖼️
+          </button>
+
+          <button
+            class="round"
+            id="torchBtn"
+            title="Flash">
+            🔦
+          </button>
+
+        </div>
+
+        <button
+          class="capture"
+          id="captureBtn"
+          title="Toque: foto • segure: vídeo">
+        </button>
+
+        <div class="side-actions">
+
+          <button
+            class="round"
+            id="flipBtn"
+            title="Trocar câmera">
+            🔄
+          </button>
+
+          <button
+            class="round"
+            id="labBtn"
+            title="Laboratório">
+            🧪
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <p class="sub">
+    Toque no botão central para foto.
+    Pressione por aproximadamente 0,4 s para iniciar/encerrar vídeo.
+    Flash depende do suporte do aparelho.
+  </p>
+
+</section>
+
+<section id="labSection" class="card">
+
+  <h2>
+    🧠 CROSS-MODAL ENGINE • EMA
+  </h2>
+
+  <div class="grid3">
+
+    <div class="metric">
+      <b id="crossIndex">0.00</b>
+      <span>Índice sensorial estimado</span>
+    </div>
+
+    <div class="metric">
+      <b id="crossCoverage">0/6</b>
+      <span>Cobertura dos sensores</span>
+    </div>
+
+    <div class="metric">
+      <b id="crossConf">0%</b>
+      <span>Confiança estimada</span>
+    </div>
+
+  </div>
+
+  <div class="progress">
+    <i id="stressBar"></i>
+  </div>
+
+  <div
+    class="formula"
+    id="formulaBox">
+    Aguardando dados…
+  </div>
+
+  <p class="sub">
+    Índice experimental para integração multimodal.
+    Não é diagnóstico, medição clínica nem classificação médica.
+  </p>
+
+  <div
+    id="crossLog"
+    class="log">
+    [--:--:--] Motor aguardando inicialização.
+  </div>
+
+</section>
+
+<section class="card">
+
+  <h2>🎙️ ÁUDIO</h2>
+
+  <div class="grid">
+
+    <div class="metric">
+      <b id="audioDb">—</b>
+      <span>dB* estimado / não calibrado</span>
+    </div>
+
+    <div class="metric">
+      <b id="audioIndex">0%</b>
+      <span>índice relativo</span>
+    </div>
+
+  </div>
+
+  <div
+    class="wave"
+    id="wave">
+  </div>
+
+  <div class="row">
+
+    <button id="audioBtn">
+      ATIVAR MICROFONE
+    </button>
+
+    <button
+      id="audioStopBtn"
+      disabled>
+      PARAR
+    </button>
+
+  </div>
+
+  <p id="audioMsg" class="sub">
+    O microfone fornece amplitude relativa.
+    dB* é uma estimativa dependente do aparelho
+    e não substitui um medidor calibrado.
+  </p>
+
+</section>
+
+<section class="card">
+
+  <h2>💡 LUZ</h2>
+
+  <div class="grid">
+
+    <div class="metric">
+      <b id="lightVal">—</b>
+      <span>lux* estimado</span>
+    </div>
+
+    <div class="metric">
+      <b id="lightConf">0%</b>
+      <span>confiança</span>
+    </div>
+
+  </div>
+
+  <div class="row">
+
+    <button id="lightBtn">
+      ATIVAR SENSOR DE LUZ
+    </button>
+
+    <button
+      id="lightStopBtn"
+      disabled>
+      PARAR
+    </button>
+
+  </div>
+
+  <p id="lightMsg" class="sub">
+    Prioridade: AmbientLightSensor quando disponível.
+    Fallback: análise da câmera, aproximada e não calibrada.
+  </p>
+
+</section>
+
+<section class="card">
+
+  <h2>📱 MOVIMENTO</h2>
+
+  <div class="grid3">
+
+    <div class="metric">
+      <b id="mx">0.00</b>
+      <span>X</span>
+    </div>
+
+    <div class="metric">
+      <b id="my">0.00</b>
+      <span>Y</span>
+    </div>
+
+    <div class="metric">
+      <b id="mz">0.00</b>
+      <span>Z</span>
+    </div>
+
+    <div class="metric">
+      <b id="mmag">0.00</b>
+      <span>MAG</span>
+    </div>
+
+    <div class="metric">
+      <b id="mstate">Parado</b>
+      <span>estado</span>
+    </div>
+
+    <div class="metric">
+      <b id="mindex">0%</b>
+      <span>índice</span>
+    </div>
+
+  </div>
+
+  <button id="motionBtn">
+    ATIVAR MOVIMENTO
+  </button>
+
+  <p id="motionMsg" class="sub">
+    Acelerômetro/DeviceMotion depende do navegador
+    e da permissão do aparelho.
+  </p>
+
+</section>
+
+<section class="card">
+
+  <h2>🧭 ORIENTAÇÃO / BÚSSOLA</h2>
+
+  <div class="compass">
+
+    <span class="north">
+      N
+    </span>
+
+    <div
+      id="needle"
+      class="needle">
+    </div>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="metric">
+      <b id="heading">—</b>
+      <span>heading estimado</span>
+    </div>
+
+    <div class="metric">
+      <b id="orientStatus">Inativa</b>
+      <span>estado</span>
+    </div>
+
+  </div>
+
+  <button id="orientationBtn">
+    ATIVAR ORIENTAÇÃO
+  </button>
+
+  <p id="orientMsg" class="sub">
+    O heading pode ser relativo ao dispositivo.
+    Não representa localização precisa nem identifica
+    a origem de um som sozinho.
+  </p>
+
+</section>
+
+<section class="card">
+
+  <h2>📍 GPS + 🔋 BATERIA</h2>
+
+  <div class="grid">
+
+    <div class="metric">
+      <b id="gpsVal">—</b>
+      <span>posição / precisão</span>
+    </div>
+
+    <div class="metric">
+      <b id="batVal">—</b>
+      <span>bateria</span>
+    </div>
+
+  </div>
+
+  <div class="row">
+
+    <button id="gpsBtn">
+      ATIVAR GPS
+    </button>
+
+    <button id="batteryBtn">
+      ATUALIZAR BATERIA
+    </button>
+
+  </div>
+
+  <p id="gpsMsg" class="sub">
+    GPS pode levar alguns segundos e sua precisão
+    varia conforme ambiente e aparelho.
+  </p>
+
+</section>
+
+<section class="card">
+
+  <h2>🗣️ NOTA SENSORIAL</h2>
+
+  <textarea
+    id="noteInput"
+    placeholder="Descreva o que você observou neste lugar…">
+  </textarea>
+
+  <div class="row">
+
+    <button id="saveNoteBtn">
+      SALVAR NOTA
+    </button>
+
+    <button id="voiceBtn">
+      🎙️ NOTA POR VOZ
+    </button>
+
+  </div>
+
+  <div id="notesList"></div>
+
+</section>
+
+<section class="card">
+
+  <h2>⭐ ESTIVE AQUI</h2>
+
+  <p class="sub">
+    Uma captura de contexto: imagem, sensores disponíveis,
+    localização, bateria, orientação, nota e índice Cross-Modal.
+    Dados ficam localmente no aparelho.
+  </p>
+
+  <button
+    id="hereBtn"
+    class="primary">
+    ESTIVE AQUI • CAPTURAR MEMÓRIA
+  </button>
+
+  <div
+    id="hereStatus"
+    class="sub"
+    style="margin-top:8px">
+  </div>
+
+</section>
+
+<section
+  id="gallerySection"
+  class="card">
+
+  <div class="row">
+
+    <h2 style="margin:0;flex:2">
+      🗃️ MEMÓRIA SENSORIAL / GALERIA
+    </h2>
+
+    <button
+      id="clearGalleryBtn"
+      class="small danger">
+      LIMPAR
+    </button>
+
+  </div>
+
+  <div
+    id="gallery"
+    class="gallery">
+  </div>
+
+  <p
+    id="galleryEmpty"
+    class="sub">
+    Nenhuma captura salva ainda.
+  </p>
+
+</section>
+
+<section class="card">
+
+  <h2>ℹ️ PRINCÍPIOS DO LABORATÓRIO</h2>
+
+  <div class="sub">
+
+    <p>
+      • <b>Não inventar dados:</b>
+      se um sensor não estiver disponível,
+      o sistema informa indisponibilidade.
+    </p>
+
+    <p>
+      • <b>Áudio:</b>
+      dB* estimado, não calibrado.
+    </p>
+
+    <p>
+      • <b>Luz:</b>
+      lux* aproximado quando derivado da câmera.
+    </p>
+
+    <p>
+      • <b>GPS:</b>
+      precisão informada pelo próprio navegador
+      quando disponível.
+    </p>
+
+    <p>
+      • <b>Cross-Modal:</b>
+      índice computacional experimental,
+      não clínico.
+    </p>
+
+    <p>
+      • <b>Háptica:</b>
+      vibração do telefone é apenas uma resposta
+      de protótipo; não representa ainda a resposta
+      física do NEXUS TACTILE.
+    </p>
+
+  </div>
+
+</section>
+
+<div class="fixed">
+
+  <button
+    id="fixedHere"
+    class="primary">
+    ⭐ ESTIVE AQUI • 1s CAPTURA
+  </button>
+
+</div>
+
+</div>
+
+<div
+  id="toast"
+  class="toast">
+</div>
+
+<canvas
+  id="analysisCanvas"
+  width="64"
+  height="64"
+  hidden>
+</canvas>
+
+<script>
+'use strict';
+
+/* =========================================================
+   REMINA MOBILE SENSOR LAB — SINGLE FILE BASELINE
+   Arquitetura: câmera + sensores + memória local + EMA.
+   Sem dependências externas.
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+
+const clamp = (v,a=0,b=1) =>
+  Math.max(a,Math.min(b,v));
+
+const nowTime = () =>
+  new Date().toLocaleTimeString(
+    'pt-BR',
+    {hour12:false}
+  );
+
+const fmt = (v,n=2) =>
+  Number.isFinite(v)
+    ? v.toFixed(n)
+    : '—';
+
+const S = {
+
+  engine:false,
+
+  camera:false,
+  audio:false,
+  light:false,
+  movement:false,
+  compass:false,
+  gps:false,
+  battery:false,
+
+  cameraFallbackLight:false,
+
+  facing:'environment',
+
+  torch:false,
+  recording:false,
+
+  emaStress:0,
+  lastStressRaw:0,
+
+  audioNorm:0,
+  lightNorm:0,
+  movementNorm:0,
+
+  audioDb:null,
+  audioConfidence:0,
+
+  lightLux:null,
+  lightConfidence:0,
+
+  motion:{
+    x:0,
+    y:0,
+    z:0,
+    mag:0,
+    state:'Parado'
+  },
+
+  heading:null,
+
+  gps:{
+    lat:null,
+    lng:null,
+    accuracy:null
+  },
+
+  batteryLevel:null,
+  batteryCharging:null,
+
+  lastPhotoBlob:null,
+  lastPhotoUrl:null
+};
+
+let cameraStream = null;
+let audioStream = null;
+let audioCtx = null;
+let analyser = null;
+let audioData = null;
+let audioRAF = null;
+
+let lightSensor = null;
+let lightTimer = null;
+
+let gpsWatch = null;
+let batteryObj = null;
+
+let recorder = null;
+let recordedChunks = [];
+
+let recordTimer = null;
+let pressTimer = null;
+let pressStarted = false;
+
+let cameraAnalysisTimer = null;
+
+let dbPromise = null;
+
+
+/* ---------- UI ---------- */
+
+function toast(msg){
+
+  const t = $('toast');
+
+  t.textContent = msg;
+
+  t.classList.add('show');
+
+  clearTimeout(toast._t);
+
+  toast._t = setTimeout(
+    () => t.classList.remove('show'),
+    2300
+  );
+}
+
+
+function log(msg){
+
+  const box = $('crossLog');
+
+  const line =
+    `[${nowTime()}] ${msg}`;
+
+  box.textContent =
+    line + '\n' +
+    box.textContent
+      .split('\n')
+      .slice(0,8)
+      .join('\n');
+}
+
+
+function setStatus(
+  id,
+  text,
+  type=''
+){
+
+  const el = $(id);
+
+  if(!el)return;
+
+  el.textContent = text;
+
+  el.className =
+    'badge' +
+    (type ? ' '+type : '');
+}
+
+
+function vibrate(pattern=[45]){
+
+  try{
+
+    if('vibrate' in navigator){
+
+      navigator.vibrate(pattern);
+
+    }
+
+  }catch(e){}
+
+}
+
+
+/* ---------- IndexedDB ---------- */
+
+function openDB(){
+
+  if(dbPromise)
+    return dbPromise;
+
+  dbPromise =
+    new Promise((resolve,reject)=>{
+
+      if(!('indexedDB' in window)){
+
+        reject(
+          new Error(
+            'IndexedDB indisponível'
+          )
+        );
+
+        return;
+      }
+
+      const req =
+        indexedDB.open(
+          'remina-mobile-sensor-lab',
+          1
+        );
+
+      req.onupgradeneeded =
+        e => {
+
+          const db =
+            e.target.result;
+
+          if(
+            !db.objectStoreNames.contains(
+              'records'
+            )
+          ){
+
+            const store =
+              db.createObjectStore(
+                'records',
+                {
+                  keyPath:'id',
+                  autoIncrement:true
+                }
+              );
+
+            store.createIndex(
+              'createdAt',
+              'createdAt'
+            );
+
+          }
+
+        };
+
+      req.onsuccess =
+        e => resolve(
+          e.target.result
+        );
+
+      req.onerror =
+        () => reject(
+          req.error ||
+          new Error(
+            'Falha IndexedDB'
+          )
+        );
+
+    });
+
+  return dbPromise;
+}
+
+
+async function dbAdd(record){
+
+  const db =
+    await openDB();
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const tx =
+        db.transaction(
+          'records',
+          'readwrite'
+        );
+
+      const req =
+        tx.objectStore(
+          'records'
+        ).add(record);
+
+      req.onsuccess =
+        () => resolve(req.result);
+
+      req.onerror =
+        () => reject(req.error);
+
+    }
+  );
+}
+
+
+async function dbAll(){
+
+  const db =
+    await openDB();
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const tx =
+        db.transaction(
+          'records',
+          'readonly'
+        );
+
+      const req =
+        tx.objectStore(
+          'records'
+        ).getAll();
+
+      req.onsuccess =
+        () => resolve(
+          req.result.reverse()
+        );
+
+      req.onerror =
+        () => reject(req.error);
+
+    }
+  );
+}
+
+
+async function dbClear(){
+
+  const db =
+    await openDB();
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const tx =
+        db.transaction(
+          'records',
+          'readwrite'
+        );
+
+      const req =
+        tx.objectStore(
+          'records'
+        ).clear();
+
+      req.onsuccess =
+        resolve;
+
+      req.onerror =
+        () => reject(req.error);
+
+    }
+  );
+}
+
+
+async function dbDelete(id){
+
+  const db =
+    await openDB();
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const tx =
+        db.transaction(
+          'records',
+          'readwrite'
+        );
+
+      const req =
+        tx.objectStore(
+          'records'
+        ).delete(id);
+
+      req.onsuccess =
+        resolve;
+
+      req.onerror =
+        () => reject(req.error);
+
+    }
+  );
+}
+
+
+async function renderGallery(){
+
+  const g =
+    $('gallery');
+
+  const empty =
+    $('galleryEmpty');
+
+  g.innerHTML = '';
+
+  let rows = [];
+
+  try{
+
+    rows =
+      await dbAll();
+
+  }catch(e){
+
+    empty.textContent =
+      'Memória local indisponível neste navegador.';
+
+    return;
+  }
+
+  empty.classList.toggle(
+    'hidden',
+    rows.length > 0
+  );
+
+  for(const r of rows){
+
+    const item =
+      document.createElement('div');
+
+    item.className =
+      'gallery-item';
+
+    if(r.photo){
+
+      const img =
+        document.createElement('img');
+
+      img.src =
+        URL.createObjectURL(
+          r.photo
+        );
+
+      img.alt =
+        'Captura REMINA';
+
+      item.appendChild(img);
+
+    }else if(r.video){
+
+      const v =
+        document.createElement('video');
+
+      v.controls = true;
+      v.playsInline = true;
+
+      v.src =
+        URL.createObjectURL(
+          r.video
+        );
+
+      item.appendChild(v);
+
+    }
+
+    const meta =
+      document.createElement('div');
+
+    meta.className =
+      'meta';
+
+    const gps =
+      r.gps?.lat != null
+        ? `${r.gps.lat.toFixed(5)}, ${r.gps.lng.toFixed(5)}`
+        : 'GPS indisponível';
+
+    meta.innerHTML =
+      `<b>${new Date(r.createdAt).toLocaleString('pt-BR')}</b><br>` +
+      `Índice: ${Number(r.cross?.emaStress || 0).toFixed(2)} • ${gps}`;
+
+    const del =
+      document.createElement('button');
+
+    del.className =
+      'small danger';
+
+    del.textContent =
+      'Excluir';
+
+    del.style.marginTop =
+      '7px';
+
+    del.onclick =
+      async () => {
+
+        await dbDelete(r.id);
+
+        await renderGallery();
+
+        toast(
+          'Memória excluída.'
+        );
+
+      };
+
+    meta.appendChild(del);
+
+    item.appendChild(meta);
+
+    g.appendChild(item);
+
+  }
+
+}
+
+
+/* ---------- CAMERA ---------- */
+
+async function startCamera(){
+
+  if(
+    !navigator.mediaDevices?.getUserMedia
+  ){
+
+    toast(
+      'Câmera não suportada neste navegador.'
+    );
+
+    return false;
+  }
+
+  stopCamera();
+
+  try{
+
+    cameraStream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video:{
+          facingMode:S.facing,
+
+          width:{
+            ideal:1280
+          },
+
+          height:{
+            ideal:720
+          }
+        },
+
+        audio:false
+
+      });
+
+    $('camera').srcObject =
+      cameraStream;
+
+    await $('camera')
+      .play()
+      .catch(()=>{});
+
+    S.camera = true;
+
+    $('cameraGate')
+      .classList
+      .add('hidden');
+
+    setStatus(
+      'cameraStatus',
+      'Câmera ativa',
+      'on'
+    );
+
+    startCameraLightFallback();
+
+    toast(
+      'Câmera ativada.'
+    );
+
+    return true;
+
+  }catch(e){
+
+    S.camera = false;
+
+    setStatus(
+      'cameraStatus',
+      'Câmera indisponível',
+      'err'
+    );
+
+    toast(
+      'Não foi possível abrir a câmera. Verifique a permissão.'
+    );
+
+    return false;
+  }
+}
+
+
+function stopCamera(){
+
+  if(cameraStream){
+
+    cameraStream
+      .getTracks()
+      .forEach(
+        t => t.stop()
+      );
+
+    cameraStream = null;
+  }
+
+  S.camera = false;
+
+  stopCameraLightFallback();
+}
+
+
+async function flipCamera(){
+
+  S.facing =
+    S.facing === 'environment'
+      ? 'user'
+      : 'environment';
+
+  if(S.camera){
+
+    await startCamera();
+
+  }
+}
+
+
+async function toggleTorch(){
+
+  if(!cameraStream){
+
+    toast(
+      'Abra a câmera primeiro.'
+    );
+
+    return;
+  }
+
+  const track =
+    cameraStream
+      .getVideoTracks()[0];
+
+  const caps =
+    track?.getCapabilities?.() || {};
+
+  if(!caps.torch){
+
+    toast(
+      'Flash/torch não é suportado pelo navegador/aparelho.'
+    );
+
+    return;
+  }
+
+  S.torch =
+    !S.torch;
+
+  try{
+
+    await track.applyConstraints({
+
+      advanced:[
+        {
+          torch:S.torch
+        }
+      ]
+
+    });
+
+    $('torchBtn').textContent =
+      S.torch
+        ? '💡'
+        : '🔦';
+
+  }catch(e){
+
+    S.torch = false;
+
+    toast(
+      'Não foi possível controlar o flash.'
+    );
+
+  }
+}
+
+
+function capturePhoto(){
+
+  const v =
+    $('camera');
+
+  if(
+    !S.camera ||
+    !v.videoWidth
+  ){
+
+    toast(
+      'Abra a câmera antes de capturar.'
+    );
+
+    return null;
+  }
+
+  const c =
+    document.createElement(
+      'canvas'
+    );
+
+  c.width =
+    v.videoWidth;
+
+  c.height =
+    v.videoHeight;
+
+  c.getContext('2d')
+    .drawImage(
+      v,
+      0,
+      0,
+      c.width,
+      c.height
+    );
+
+  vibrate([
+    50,
+    30,
+    50
+  ]);
+
+  return new Promise(
+    resolve =>
+      c.toBlob(
+        b => {
+
+          S.lastPhotoBlob =
+            b;
+
+          resolve(b);
+
+        },
+        'image/jpeg',
+        .9
+      )
+  );
+}
+
+
+async function startVideo(){
+
+  if(
+    !S.camera ||
+    !cameraStream
+  ){
+
+    toast(
+      'Abra a câmera antes de gravar.'
+    );
+
+    return;
+  }
+
+  if(!window.MediaRecorder){
+
+    toast(
+      'Vídeo não suportado neste navegador.'
+    );
+
+    return;
+  }
+
+  let mime =
+    'video/webm;codecs=vp9,opus';
+
+  if(
+    !MediaRecorder.isTypeSupported(
+      mime
+    )
+  ){
+
+    mime =
+      'video/webm';
+  }
+
+  if(
+    !MediaRecorder.isTypeSupported(
+      mime
+    )
+  ){
+
+    toast(
+      'Formato de vídeo não suportado.'
+    );
+
+    return;
+  }
+
+  recordedChunks = [];
+
+  try{
+
+    recorder =
+      new MediaRecorder(
+        cameraStream,
+        {
+          mimeType:mime
+        }
+      );
+
+  }catch(e){
+
+    toast(
+      'Não foi possível iniciar o gravador.'
+    );
+
+    return;
+  }
+
+  recorder.ondataavailable =
+    e => {
+
+      if(e.data?.size)
+        recordedChunks.push(
+          e.data
+        );
+
+    };
+
+  recorder.onstop =
+    async () => {
+
+      clearTimeout(
+        recordTimer
+      );
+
+      S.recording =
+        false;
+
+      $('captureBtn')
+        .classList
+        .remove('recording');
+
+      const blob =
+        new Blob(
+          recordedChunks,
+          {
+            type:mime
+          }
+        );
+
+      if(blob.size){
+
+        try{
+
+          await dbAdd({
+
+            createdAt:Date.now(),
+
+            video:blob,
+
+            cross:
+              crossSnapshot(),
+
+            gps:S.gps,
+
+            note:
+              currentNote()
+
+          });
+
+          await renderGallery();
+
+          toast(
+            'Vídeo salvo na memória local.'
+          );
+
+        }catch(e){
+
+          toast(
+            'Vídeo gravado, mas não pôde ser salvo localmente.'
+          );
+
+        }
+
+      }
+
+    };
+
+  recorder.start();
+
+  S.recording = true;
+
+  $('captureBtn')
+    .classList
+    .add('recording');
+
+  vibrate([80]);
+
+  toast(
+    'Gravação iniciada. Toque novamente para parar.'
+  );
+}
+
+
+function stopVideo(){
+
+  if(
+    recorder &&
+    S.recording
+  ){
+
+    recorder.stop();
+
+    return true;
+  }
+
+  return false;
+}
+
+
+/* ---------- CAMERA LIGHT FALLBACK ---------- */
+
+function startCameraLightFallback(){
+
+  if(
+    !S.camera ||
+    S.light
+  )
+    return;
+
+  clearInterval(
+    cameraAnalysisTimer
+  );
+
+  cameraAnalysisTimer =
+    setInterval(
+      () => {
+
+        if(
+          !S.camera ||
+          S.light
+        )
+          return;
+
+        const v =
+          $('camera');
+
+        if(!v.videoWidth)
+          return;
+
+        const c =
+          $('analysisCanvas');
+
+        const ctx =
+          c.getContext(
+            '2d',
+            {
+              willReadFrequently:true
+            }
+          );
+
+        try{
+
+          ctx.drawImage(
+            v,
+            0,
+            0,
+            64,
+            64
+          );
+
+          const d =
+            ctx.getImageData(
+              0,
+              0,
+              64,
+              64
+            ).data;
+
+          let sum = 0;
+
+          for(
+            let i=0;
+            i<d.length;
+            i+=4
+          ){
+
+            sum +=
+              0.2126*d[i] +
+              0.7152*d[i+1] +
+              0.0722*d[i+2];
+
+          }
+
+          const lum =
+            sum /
+            (d.length / 4);
+
+          const pct =
+            clamp(
+              lum / 255
+            );
+
+          const lux =
+            Math.round(
+              pct * 1000
+            );
+
+          S.lightLux =
+            lux;
+
+          S.lightConfidence =
+            .35;
+
+          S.cameraFallbackLight =
+            true;
+
+          updateLightUI(
+            'Câmera • estimativa aproximada',
+            true
+          );
+
+        }catch(e){}
+
+      },
+      600
+    );
+}
+
+
+function stopCameraLightFallback(){
+
+  clearInterval(
+    cameraAnalysisTimer
+  );
+
+  cameraAnalysisTimer =
+    null;
+
+  S.cameraFallbackLight =
+    false;
+}
+
+
+/* ---------- AUDIO ---------- */
+
+async function startAudio(){
+
+  if(
+    !navigator.mediaDevices?.getUserMedia
+  ){
+
+    toast(
+      'Microfone não suportado.'
+    );
+
+    return;
+  }
+
+  try{
+
+    stopAudio();
+
+    audioStream =
+      await navigator.mediaDevices
+        .getUserMedia({
+
+          audio:{
+            echoCancellation:false,
+            noiseSuppression:false,
+            autoGainControl:false
+          },
+
+          video:false
+
+        });
+
+    audioCtx =
+      new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
+
+    const source =
+      audioCtx
+        .createMediaStreamSource(
+          audioStream
+        );
+
+    analyser =
+      audioCtx.createAnalyser();
+
+    analyser.fftSize =
+      1024;
+
+    analyser.smoothingTimeConstant =
+      .65;
+
+    source.connect(
+      analyser
+    );
+
+    audioData =
+      new Float32Array(
+        analyser.fftSize
+      );
+
+    S.audio =
+      true;
+
+    $('audioBtn').disabled =
+      true;
+
+    $('audioStopBtn').disabled =
+      false;
+
+    drawAudio();
+
+    toast(
+      'Microfone ativado.'
+    );
+
+  }catch(e){
+
+    S.audio =
+      false;
+
+    toast(
+      'Microfone não autorizado ou indisponível.'
+    );
+
+  }
+}
+
+
+function stopAudio(){
+
+  if(audioRAF)
+    cancelAnimationFrame(
+      audioRAF
+    );
+
+  audioRAF =
+    null;
+
+  if(audioStream){
+
+    audioStream
+      .getTracks()
+      .forEach(
+        t => t.stop()
+      );
+
+    audioStream =
+      null;
+  }
+
+  if(audioCtx){
+
+    audioCtx
+      .close()
+      .catch(()=>{});
+
+    audioCtx =
+      null;
+  }
+
+  analyser =
+    null;
+
+  S.audio =
+    false;
+
+  $('audioBtn').disabled =
+    false;
+
+  $('audioStopBtn').disabled =
+    true;
+}
+
+
+function drawAudio(){
+
+  if(!analyser)
+    return;
+
+  analyser.getFloatTimeDomainData(
+    audioData
+  );
+
+  let sum = 0;
+
+  for(
+    let i=0;
+    i<audioData.length;
+    i++
+  ){
+
+    sum +=
+      audioData[i] *
+      audioData[i];
+
+  }
+
+  const rms =
+    Math.sqrt(
+      sum /
+      audioData.length
+    );
+
+  const db =
+    clamp(
+      20 *
+      Math.log10(
+        Math.max(
+          rms,
+          1e-5
+        )
+      ) +
+      90,
+      0,
+      120
+    );
+
+  const norm =
+    clamp(
+      (db - 28) / 72
+    );
+
+  S.audioDb =
+    db;
+
+  S.audioNorm =
+    norm;
+
+  S.audioConfidence =
+    clamp(
+      (rms / .08) * .75 + .25
+    );
+
+  $('audioDb')
+    .textContent =
+      `${db.toFixed(1)}*`;
+
+  $('audioIndex')
+    .textContent =
+      `${Math.round(norm*100)}%`;
+
+  const wave =
+    $('wave');
+
+  if(
+    wave.children.length === 0
+  ){
+
+    for(
+      let i=0;
+      i<48;
+      i++
+    ){
+
+      const bar =
+        document.createElement(
+          'i'
+        );
+
+      wave.appendChild(
+        bar
+      );
+
+    }
+
+  }
+
+  const bars =
+    [...wave.children];
+
+  const step =
+    Math.max(
+      1,
+      Math.floor(
+        audioData.length /
+        bars.length
+      )
+    );
+
+  bars.forEach(
+    (b,i)=>{
+
+      const v =
+        Math.abs(
+          audioData[
+            i*step
+          ] || 0
+        );
+
+      b.style.height =
+        `${Math.max(
+          5,
+          Math.min(
+            100,
+            v*500
+          )
+        )}%`;
+
+    }
+  );
+
+  audioRAF =
+    requestAnimationFrame(
+      drawAudio
+    );
+}
+
+
+/* ---------- LIGHT ---------- */
+
+async function startLight(){
+
+  if(
+    'AmbientLightSensor' in window
+  ){
+
+    try{
+
+      lightSensor =
+        new AmbientLightSensor();
+
+      lightSensor.addEventListener(
+        'reading',
+        () => {
+
+          if(
+            Number.isFinite(
+              lightSensor.illuminance
+            )
+          ){
+
+            S.lightLux =
+              lightSensor.illuminance;
+
+            S.lightConfidence =
+              .9;
+
+            S.light =
+              true;
+
+            S.cameraFallbackLight =
+              false;
+
+            updateLightUI(
+              'Sensor ambiente nativo',
+              true
+            );
+
+          }
+
+        }
+      );
+
+      lightSensor.addEventListener(
+        'error',
+        () => {
+          useLightFallback();
+        }
+      );
+
+      lightSensor.start();
+
+      S.light =
+        true;
+
+      toast(
+        'Sensor de luz solicitado.'
+      );
+
+      return;
+
+    }catch(e){
+
+      useLightFallback();
+
+      return;
+    }
+
+  }
+
+  useLightFallback();
+}
+
+
+function useLightFallback(){
+
+  if(!S.camera){
+
+    toast(
+      'Para o fallback de luz, abra a câmera.'
+    );
+
+    return;
+  }
+
+  S.light =
+    true;
+
+  S.lightConfidence =
+    .35;
+
+  startCameraLightFallback();
+
+  toast(
+    'Usando estimativa de luz pela câmera.'
+  );
+}
+
+
+function stopLight(){
+
+  try{
+
+    lightSensor?.stop?.();
+
+  }catch(e){}
+
+  lightSensor =
+    null;
+
+  S.light =
+    false;
+
+  S.cameraFallbackLight =
+    false;
+
+  S.lightLux =
+    null;
+
+  stopCameraLightFallback();
+
+  $('lightBtn').disabled =
+    false;
+
+  $('lightStopBtn').disabled =
+    true;
+
+  $('lightVal').textContent =
+    '—';
+
+  $('lightConf').textContent =
+    '0%';
+}
+
+
+function updateLightUI(
+  source,
+  active
+){
+
+  if(!active)
+    return;
+
+  const lux =
+    Number.isFinite(
+      S.lightLux
+    )
+      ? S.lightLux
+      : null;
+
+  $('lightVal')
+    .textContent =
+      lux == null
+        ? '—'
+        : `${Math.round(lux)}*`;
+
+  $('lightConf')
+    .textContent =
+      `${Math.round(
+        S.lightConfidence*100
+      )}%`;
+
+  $('lightMsg')
+    .textContent =
+      `${source}. ${
+        S.cameraFallbackLight
+          ? 'Lux* aproximado derivado da imagem; não calibrado.'
+          : 'Leitura depende do sensor e do navegador.'
+      }`;
+
+  $('lightBtn').disabled =
+    true;
+
+  $('lightStopBtn').disabled =
+    false;
+}
+
+
+/* ---------- MOTION ---------- */
+
+function motionHandler(e){
+
+  const a =
+    e.accelerationIncludingGravity ||
+    e.acceleration;
+
+  if(!a)
+    return;
+
+  const x =
+    Number(a.x) || 0;
+
+  const y =
+    Number(a.y) || 0;
+
+  const z =
+    Number(a.z) || 0;
+
+  const mag =
+    Math.sqrt(
+      x*x +
+      y*y +
+      z*z
+    );
+
+  S.motion = {
+
+    x,
+    y,
+    z,
+    mag,
+
+    state:
+      mag < 10.2
+        ? 'Parado'
+        : mag < 13
+          ? 'Movimento'
+          : 'Agitado'
+
+  };
+
+  S.movement =
+    true;
+
+  $('mx').textContent =
+    fmt(x);
+
+  $('my').textContent =
+    fmt(y);
+
+  $('mz').textContent =
+    fmt(z);
+
+  $('mmag').textContent =
+    fmt(mag);
+
+  $('mstate').textContent =
+    S.motion.state;
+
+  const idx =
+    clamp(
+      Math.abs(
+        mag - 9.81
+      ) / 8
+    );
+
+  S.movementNorm =
+    idx;
+
+  $('mindex').textContent =
+    `${Math.round(idx*100)}%`;
+}
+
+
+async function startMotion(){
+
+  if(
+    !('DeviceMotionEvent' in window)
+  ){
+
+    toast(
+      'Sensor de movimento indisponível.'
+    );
+
+    return;
+  }
+
+  try{
+
+    if(
+      typeof DeviceMotionEvent.requestPermission ===
+      'function'
+    ){
+
+      const p =
+        await DeviceMotionEvent
+          .requestPermission();
+
+      if(p !== 'granted')
+        throw new Error(
+          'denied'
+        );
+
+    }
+
+    window.addEventListener(
+      'devicemotion',
+      motionHandler
+    );
+
+    S.movement =
+      true;
+
+    $('motionBtn').textContent =
+      'MOVIMENTO ATIVO';
+
+    $('motionBtn').disabled =
+      true;
+
+    toast(
+      'Movimento ativado.'
+    );
+
+  }catch(e){
+
+    toast(
+      'Permissão de movimento não concedida.'
+    );
+
+  }
+}
+
+
+/* ---------- ORIENTATION ---------- */
+
+function orientationHandler(e){
+
+  let heading =
+    null;
+
+  if(
+    Number.isFinite(
+      e.webkitCompassHeading
+    )
+  ){
+
+    heading =
+      e.webkitCompassHeading;
+
+  }else if(
+    Number.isFinite(e.alpha)
+  ){
+
+    heading =
+      (360 - e.alpha) % 360;
+
+  }
+
+  if(heading == null)
+    return;
+
+  S.heading =
+    heading;
+
+  S.compass =
+    true;
+
+  $('heading')
+    .textContent =
+      `${Math.round(heading)}°`;
+
+  $('needle')
+    .style.transform =
+      `rotate(${heading}deg)`;
+
+  $('orientStatus')
+    .textContent =
+      'Ativa';
+}
+
+
+async function startOrientation(){
+
+  if(
+    !('DeviceOrientationEvent' in window)
+  ){
+
+    toast(
+      'Orientação indisponível.'
+    );
+
+    return;
+  }
+
+  try{
+
+    if(
+      typeof DeviceOrientationEvent.requestPermission ===
+      'function'
+    ){
+
+      const p =
+        await DeviceOrientationEvent
+          .requestPermission();
+
+      if(p !== 'granted')
+        throw new Error(
+          'denied'
+        );
+
+    }
+
+    window.addEventListener(
+      'deviceorientation',
+      orientationHandler,
+      true
+    );
+
+    S.compass =
+      true;
+
+    $('orientationBtn').disabled =
+      true;
+
+    toast(
+      'Orientação ativada.'
+    );
+
+  }catch(e){
+
+    toast(
+      'Permissão de orientação não concedida.'
+    );
+
+  }
+}
+
+
+/* ---------- GPS ---------- */
+
+function startGPS(){
+
+  if(
+    !navigator.geolocation
+  ){
+
+    toast(
+      'GPS/geolocalização indisponível.'
+    );
+
+    return;
+  }
+
+  if(gpsWatch != null)
+    navigator.geolocation.clearWatch(
+      gpsWatch
+    );
+
+  gpsWatch =
+    navigator.geolocation.watchPosition(
+
+      pos => {
+
+        S.gps = {
+
+          lat:
+            pos.coords.latitude,
+
+          lng:
+            pos.coords.longitude,
+
+          accuracy:
+            pos.coords.accuracy
+
+        };
+
+        S.gps =
+          true;
+
+        $('gpsVal')
+          .textContent =
+            `${S.gps.lat.toFixed(5)}, ${S.gps.lng.toFixed(5)}`;
+
+        $('gpsMsg')
+          .textContent =
+            `Precisão informada: ±${Math.round(
+              S.gps.accuracy || 0
+            )} m`;
+
+        $('gpsBtn').disabled =
+          true;
+
+        $('gpsBtn').textContent =
+          'GPS ATIVO';
+
+      },
+
+      err => {
+
+        S.gps =
+          false;
+
+        $('gpsMsg')
+          .textContent =
+            `GPS indisponível: ${
+              err.message ||
+              'erro de permissão/posição'
+            }`;
+
+      },
+
+      {
+
+        enableHighAccuracy:true,
+
+        maximumAge:5000,
+
+        timeout:15000
+
+      }
+
+    );
+}
+
+
+/* ---------- BATTERY ---------- */
+
+async function updateBattery(){
+
+  if(
+    !('getBattery' in navigator)
+  ){
+
+    S.battery =
+      false;
+
+    $('batVal')
+      .textContent =
+        '—';
+
+    toast(
+      'Battery API indisponível neste navegador.'
+    );
+
+    return;
+  }
+
+  try{
+
+    batteryObj =
+      batteryObj ||
+      await navigator.getBattery();
+
+    S.battery =
+      true;
+
+    const update =
+      () => {
+
+        S.batteryLevel =
+          batteryObj.level;
+
+        S.batteryCharging =
+          batteryObj.charging;
+
+        $('batVal')
+          .textContent =
+            `${Math.round(
+              batteryObj.level*100
+            )}%${
+              batteryObj.charging
+                ? ' ⚡'
+                : ''
+            }`;
+
+      };
+
+    update();
+
+    batteryObj.addEventListener(
+      'levelchange',
+      update
+    );
+
+    batteryObj.addEventListener(
+      'chargingchange',
+      update
+    );
+
+    $('batteryBtn').textContent =
+      'BATERIA ATIVA';
+
+  }catch(e){
+
+    S.battery =
+      false;
+
+  }
+}
+
+
+/* ---------- CROSS-MODAL ---------- */
+
+function sensorCoverage(){
+
+  return [
+
+    S.audio,
+    S.light,
+    S.movement,
+    S.compass,
+    S.gps,
+    S.battery
+
+  ].filter(Boolean).length;
+}
+
+
+function confidence(){
+
+  const vals = [];
+
+  if(S.audio)
+    vals.push(
+      S.audioConfidence
+    );
+
+  if(S.light)
+    vals.push(
+      S.lightConfidence
+    );
+
+  if(S.movement)
+    vals.push(.75);
+
+  if(S.compass)
+    vals.push(.7);
+
+  if(S.gps)
+    vals.push(.7);
+
+  if(S.battery)
+    vals.push(1);
+
+  if(!vals.length)
+    return 0;
+
+  const quality =
+    vals.reduce(
+      (a,b)=>a+b,
+      0
+    ) /
+    vals.length;
+
+  return clamp(
+    .55*quality +
+    .45*(sensorCoverage()/6)
+  );
+}
+
+
+function computeCrossModal(){
+
+  const audio =
+    S.audio
+      ? S.audioNorm
+      : 0;
+
+  const light =
+    S.light
+      ? clamp(
+          (Number(S.lightLux)||0) /
+          900
+        )
+      : 0;
+
+  const movement =
+    S.movement
+      ? S.movementNorm
+      : 0;
+
+  const weights = {
+
+    audio:.4,
+    light:.3,
+    movement:.3
+
+  };
+
+  let raw = 0;
+
+  let weightSum = 0;
+
+  if(S.audio){
+
+    raw +=
+      weights.audio *
+      audio;
+
+    weightSum +=
+      weights.audio;
+  }
+
+  if(S.light){
+
+    raw +=
+      weights.light *
+      light;
+
+    weightSum +=
+      weights.light;
+  }
+
+  if(S.movement){
+
+    raw +=
+      weights.movement *
+      movement;
+
+    weightSum +=
+      weights.movement;
+  }
+
+  const stressRaw =
+    weightSum
+      ? raw / weightSum
+      : 0;
+
+  S.lastStressRaw =
+    clamp(
+      stressRaw
+    );
+
+  S.emaStress =
+    clamp(
+      .7*S.emaStress +
+      .3*S.lastStressRaw
+    );
+
+  S.lightNorm =
+    light;
+
+  S.audioNorm =
+    audio;
+
+  S.movementNorm =
+    movement;
+
+  const cov =
+    sensorCoverage();
+
+  const conf =
+    confidence();
+
+  $('crossIndex')
+    .textContent =
+      S.emaStress.toFixed(2);
+
+  $('crossCoverage')
+    .textContent =
+      `${cov}/6`;
+
+  $('crossConf')
+    .textContent =
+      `${Math.round(
+        conf*100
+      )}%`;
+
+  $('stressBar')
+    .style.width =
+      `${Math.round(
+        S.emaStress*100
+      )}%`;
+
+  $('formulaBox')
+    .textContent =
+
+`audio_norm = ${audio.toFixed(2)}
+light_norm = ${light.toFixed(2)}
+movement_norm = ${movement.toFixed(2)}
+stress_raw = 0.4·audio + 0.3·light + 0.3·movement = ${S.lastStressRaw.toFixed(2)}
+EMA = 0.7·anterior + 0.3·atual = ${S.emaStress.toFixed(2)}
+f_vib (parâmetro conceitual) = ${Math.round(50+200*S.emaStress)}
+Cobertura = ${cov}/6 • Confiança estimada = ${Math.round(conf*100)}%`;
+
+  if(S.engine){
+
+    $('engineDot')
+      .classList
+      .add('on');
+
+    const level =
+      S.emaStress < .33
+        ? 'baixo'
+        : S.emaStress < .66
+          ? 'moderado'
+          : 'elevado';
+
+    $('liveSensor')
+      .textContent =
+        `Índice ${Math.round(
+          S.emaStress*100
+        )}% • ${level}`;
+
+    log(
+      `EMA ${S.emaStress.toFixed(2)} • cobertura ${cov}/6 • confiança ${Math.round(conf*100)}%`
+    );
+
+    if(
+      S.emaStress > .66
+    ){
+
+      vibrate([25]);
+
+    }
+
+  }
+
+}
+
+
+function crossSnapshot(){
+
+  return {
+
+    emaStress:
+      S.emaStress,
+
+    stressRaw:
+      S.lastStressRaw,
+
+    audio:
+      S.audioNorm,
+
+    light:
+      S.lightNorm,
+
+    movement:
+      S.movementNorm,
+
+    coverage:
+      sensorCoverage(),
+
+    confidence:
+      confidence()
+
+  };
+
+}
+
+
+/* ---------- NOTES ---------- */
+
+function currentNote(){
+
+  return $('noteInput')
+    .value
+    .trim();
+
+}
+
+
+function appendNoteText(text){
+
+  const item =
+    document.createElement(
+      'div'
+    );
+
+  item.className =
+    'note';
+
+  item.textContent =
+    text;
+
+  $('notesList')
+    .prepend(item);
+
+}
+
+
+function saveManualNote(){
+
+  const t =
+    currentNote();
+
+  if(!t){
+
+    toast(
+      'Escreva uma nota primeiro.'
+    );
+
+    return;
+  }
+
+  appendNoteText(
+    `📝 ${t}`
+  );
+
+  $('noteInput')
+    .value = '';
+
+  toast(
+    'Nota adicionada.'
+  );
+
+}
+
+
+function startVoiceNote(){
+
+  const SR =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if(!SR){
+
+    toast(
+      'Reconhecimento de voz não suportado neste navegador.'
+    );
+
+    return;
+  }
+
+  const r =
+    new SR();
+
+  r.lang =
+    'pt-BR';
+
+  r.interimResults =
+    false;
+
+  r.maxAlternatives =
+    1;
+
+  $('voiceBtn').disabled =
+    true;
+
+  $('voiceBtn').textContent =
+    '🎙️ OUVINDO…';
+
+  r.onresult =
+    e => {
+
+      const text =
+        e.results?.[0]?.[0]?.transcript ||
+        '';
+
+      $('noteInput')
+        .value =
+          (
+            $('noteInput').value +
+            ' ' +
+            text
+          ).trim();
+
+    };
+
+  r.onerror =
+    () => toast(
+      'Não foi possível reconhecer a nota por voz.'
+    );
+
+  r.onend =
+    () => {
+
+      $('voiceBtn').disabled =
+        false;
+
+      $('voiceBtn').textContent =
+        '🎙️ NOTA POR VOZ';
+
+    };
+
+  try{
+
+    r.start();
+
+  }catch(e){
+
+    r.onend();
+
+  }
+
+}
+
+
+/* ---------- ESTIVE AQUI ---------- */
+
+async function captureHere(){
+
+  $('hereStatus')
+    .textContent =
+      'Capturando contexto…';
+
+  const photo =
+    await capturePhoto();
+
+  const record = {
+
+    createdAt:
+      Date.now(),
+
+    photo,
+
+    cross:
+      crossSnapshot(),
+
+    sensors:{
+
+      audio:S.audio,
+
+      light:S.light,
+
+      movement:S.movement,
+
+      compass:S.compass,
+
+      gps:S.gps,
+
+      battery:S.battery,
+
+      camera:S.camera
+
+    },
+
+    audio:
+      S.audio
+        ? {
+
+            db:S.audioDb,
+
+            norm:S.audioNorm,
+
+            confidence:
+              S.audioConfidence
+
+          }
+        : null,
+
+    light:
+      S.light
+        ? {
+
+            lux:S.lightLux,
+
+            confidence:
+              S.lightConfidence,
+
+            fallback:
+              S.cameraFallbackLight
+
+          }
+        : null,
+
+    movement:
+      S.movement
+        ? {
+            ...S.motion
+          }
+        : null,
+
+    heading:
+      S.heading,
+
+    gps:
+      S.gps,
+
+    battery:{
+
+      level:
+        S.batteryLevel,
+
+      charging:
+        S.batteryCharging
+
+    },
+
+    note:
+      currentNote()
+
+  };
+
+  try{
+
+    await dbAdd(
+      record
+    );
+
+    await renderGallery();
+
+    vibrate([
+      50,
+      30,
+      50
+    ]);
+
+    $('hereStatus')
+      .textContent =
+        'Memória sensorial salva localmente no aparelho.';
+
+    toast(
+      'ESTIVE AQUI registrado.'
+    );
+
+  }catch(e){
+
+    $('hereStatus')
+      .textContent =
+        'Não foi possível salvar na memória local.';
+
+    toast(
+      'Falha ao salvar memória.'
+    );
+
+  }
+
+}
+
+
+/* ---------- ENGINE INIT ---------- */
+
+async function initEngine(){
+
+  if(S.engine)
+    return;
+
+  S.engine =
+    true;
+
+  $('initBtn').disabled =
+    true;
+
+  $('initBtn').textContent =
+    'LABORATÓRIO ATIVO';
+
+  $('initMsg')
+    .textContent =
+      'Ative os sensores conforme precisar. Cada permissão é solicitada pelo navegador.';
+
+  log(
+    'Motor iniciado.'
+  );
+
+  await openDB()
+    .catch(()=>{});
+
+  await updateBattery();
+
+  computeCrossModal();
+
+  setInterval(
+    computeCrossModal,
+    1000
+  );
+
+  toast(
+    'REMINA Mobile Sensor Lab iniciado.'
+  );
+
+}
+
+
+/* ---------- EVENTS ---------- */
+
+$('initBtn').onclick =
+  initEngine;
+
+$('openCamera').onclick =
+  startCamera;
+
+$('flipBtn').onclick =
+  flipCamera;
+
+$('torchBtn').onclick =
+  toggleTorch;
+
+$('audioBtn').onclick =
+  startAudio;
+
+$('audioStopBtn').onclick =
+  () => {
+
+    stopAudio();
+
+    toast(
+      'Microfone parado.'
+    );
+
+  };
+
+$('lightBtn').onclick =
+  startLight;
+
+$('lightStopBtn').onclick =
+  () => {
+
+    stopLight();
+
+    toast(
+      'Sensor de luz parado.'
+    );
+
+  };
+
+$('motionBtn').onclick =
+  startMotion;
+
+$('orientationBtn').onclick =
+  startOrientation;
+
+$('gpsBtn').onclick =
+  startGPS;
+
+$('batteryBtn').onclick =
+  updateBattery;
+
+$('saveNoteBtn').onclick =
+  saveManualNote;
+
+$('voiceBtn').onclick =
+  startVoiceNote;
+
+$('hereBtn').onclick =
+  captureHere;
+
+$('fixedHere').onclick =
+  captureHere;
+
+$('galleryBtn').onclick =
+  () =>
+    $('gallerySection')
+      .scrollIntoView({
+        behavior:'smooth'
+      });
+
+$('labBtn').onclick =
+  () =>
+    $('labSection')
+      .scrollIntoView({
+        behavior:'smooth'
+      });
+
+$('clearGalleryBtn').onclick =
+  async () => {
+
+    if(
+      confirm(
+        'Apagar todas as memórias locais?'
+      )
+    ){
+
+      await dbClear();
+
+      await renderGallery();
+
+      toast(
+        'Memória local limpa.'
+      );
+
+    }
+
+  };
+
+$('helpBtn').onclick =
+  () =>
+    alert(
+
+`REMINA Mobile Sensor Lab
+
+1. Inicie o laboratório.
+2. Abra a câmera.
+3. Ative os sensores que quiser.
+4. Observe o Cross-Modal + EMA.
+5. Use ESTIVE AQUI para registrar o contexto.
+
+Os índices são experimentais e não clínicos.
+Sensores indisponíveis nunca são tratados como dados válidos.`
+
+    );
+
+
+$('captureBtn')
+  .addEventListener(
+    'pointerdown',
+    e => {
+
+      e.preventDefault();
+
+      pressStarted =
+        true;
+
+      pressTimer =
+        setTimeout(
+          () => {
+
+            if(
+              pressStarted
+            ){
+
+              if(
+                S.recording
+              ){
+
+                stopVideo();
+
+              }else{
+
+                startVideo();
+
+              }
+
+              pressStarted =
+                false;
+
+            }
+
+          },
+          400
+        );
+
+    }
+  );
+
+
+[
+  'pointerup',
+  'pointercancel',
+  'pointerleave'
+]
+.forEach(
+  ev =>
+    $('captureBtn')
+      .addEventListener(
+        ev,
+        async e => {
+
+          if(!pressStarted)
+            return;
+
+          clearTimeout(
+            pressTimer
+          );
+
+          pressStarted =
+            false;
+
+          if(
+            ev ===
+            'pointerup'
+          ){
+
+            if(
+              S.recording
+            ){
+
+              stopVideo();
+
+              return;
+
+            }
+
+            await capturePhoto()
+              .then(
+                async blob => {
+
+                  if(!blob)
+                    return;
+
+                  try{
+
+                    await dbAdd({
+
+                      createdAt:
+                        Date.now(),
+
+                      photo:blob,
+
+                      cross:
+                        crossSnapshot(),
+
+                      gps:
+                        S.gps,
+
+                      note:
+                        currentNote()
+
+                    });
+
+                    await renderGallery();
+
+                    toast(
+                      'Foto salva na memória local.'
+                    );
+
+                  }catch(err){
+
+                    toast(
+                      'Foto capturada, mas não pôde ser salva.'
+                    );
+
+                  }
+
+                }
+              );
+
+          }
+
+        }
+      )
+);
+
+
+/* ---------- BOOT ---------- */
+
+(async()=>{
+
+  await renderGallery();
+
+  computeCrossModal();
+
+})();
+
+
+window.addEventListener(
+  'beforeunload',
+  () => {
+
+    stopCamera();
+
+    stopAudio();
+
+    if(
+      gpsWatch != null
+    ){
+
+      navigator.geolocation
+        ?.clearWatch(
+          gpsWatch
+        );
+
+    }
+
+  }
+);
+
+</script>
+
+</body>
+</html>
