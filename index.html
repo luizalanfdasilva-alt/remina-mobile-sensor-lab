@@ -3839,6 +3839,687 @@ $('captureBtn')
 window.addEventListener(
   'beforeunload',
   () => {
+    teButton"
+        class="actionButton primary">
+        SALVAR NOTA
+      </button>
+
+      <button
+        id="voiceNoteButton"
+        class="actionButton">
+        🎙️ DITAR NOTA POR VOZ
+      </button>
+
+      <div
+        id="memoryList"
+        style="margin-top:12px"></div>
+
+    </div>
+
+    <!-- FECHAR PAINEL -->
+
+    <button
+      id="closeLabButton"
+      class="actionButton danger">
+      FECHAR PAINEL
+    </button>
+
+  </section>
+
+  <!-- =====================================================
+       GALLERY PANEL
+  ====================================================== -->
+
+  <section
+    id="galleryPanel"
+    class="hidden">
+
+    <div class="galleryHeader">
+
+      <div
+        class="cardTitle"
+        style="font-size:16px">
+        🖼️ GALERIA SENSORIAL
+      </div>
+
+      <button
+        id="closeGalleryButton"
+        class="actionButton danger"
+        style="width:auto;margin:0;padding:8px 14px">
+        FECHAR
+      </button>
+
+    </div>
+
+    <div
+      id="galleryGrid"
+      class="galleryGrid"></div>
+
+  </section>
+
+  <!-- =====================================================
+       TOAST
+  ====================================================== -->
+
+  <div id="toast"></div>
+
+</div>
+
+<!-- =======================================================
+     JAVASCRIPT LOGIC
+======================================================= -->
+
+<script>
+(() => {
+  /* -------------------------------------------------------
+     ESTADO GLOBAL DO LABORATÓRIO REMINA
+  ------------------------------------------------------- */
+  let db = null;
+  let cameraStream = null;
+  let audioStream = null;
+  let facingMode = 'environment';
+  let torchActive = false;
+
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let isRecording = false;
+
+  let audioContext = null;
+  let analyser = null;
+  let micSource = null;
+
+  let currentMode = 'photo'; // 'photo', 'here', 'video'
+
+  // Normalizadores para Cross-Modal (0.0 a 1.0)
+  let normAudio = 0;
+  let normLight = 0;
+  let normMovement = 0;
+
+  // Estado do Motor EMA
+  let emaStress = 0.0;
+
+  // Registros de sensores ativos
+  const activeSensors = {
+    camera: false,
+    audio: false,
+    light: false,
+    movement: false,
+    orientation: false,
+    gps: false
+  };
+
+  /* -------------------------------------------------------
+     UTILITÁRIOS E TOAST
+  ------------------------------------------------------- */
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  function updateSensorPill() {
+    let count = 0;
+    for (let k in activeSensors) {
+      if (activeSensors[k]) count++;
+    }
+    document.getElementById('sensorCount').textContent = `${count}/6`;
+    document.getElementById('crossActive').textContent = `${count}/6`;
+    const conf = Math.round((count / 6) * 100);
+    document.getElementById('crossConf').textContent = `${conf}% Confiança`;
+  }
+
+  /* -------------------------------------------------------
+     INDEXEDDB - PERSISTÊNCIA DE MÍDIA E MEMÓRIAS
+  ------------------------------------------------------- */
+  function initDB() {
+    const req = indexedDB.open('REMINA_SensorLab_DB', 1);
+    req.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains('gallery')) {
+        db.createObjectStore('gallery', { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('memories')) {
+        db.createObjectStore('memories', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = (e) => {
+      db = e.target.result;
+      renderGallery();
+      renderMemories();
+    };
+    req.onerror = () => showToast('Erro ao abrir banco de dados local.');
+  }
+
+  function saveToGallery(item) {
+    if (!db) return;
+    const tx = db.transaction('gallery', 'readwrite');
+    tx.objectStore('gallery').add(item);
+    tx.oncomplete = () => {
+      showToast('Item salvo na Galeria Sensorial!');
+      renderGallery();
+    };
+  }
+
+  function renderGallery() {
+    if (!db) return;
+    const grid = document.getElementById('galleryGrid');
+    grid.innerHTML = '';
+    const tx = db.transaction('gallery', 'readonly');
+    const store = tx.objectStore('gallery');
+    store.getAll().onsuccess = (e) => {
+      const items = e.target.result.reverse();
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="meta" style="grid-column:1/-1;text-align:center;padding:20px;">Nenhum registro capturado.</div>';
+        return;
+      }
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'galleryItem';
+        
+        if (item.type === 'photo') {
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(item.blob);
+          div.appendChild(img);
+        } else if (item.type === 'video') {
+          const vid = document.createElement('video');
+          vid.src = URL.createObjectURL(item.blob);
+          vid.controls = true;
+          div.appendChild(vid);
+        }
+
+        const del = document.createElement('button');
+        del.className = 'galleryDelete';
+        del.innerHTML = '✕';
+        del.onclick = (evt) => {
+          evt.stopPropagation();
+          deleteGalleryItem(item.id);
+        };
+        div.appendChild(del);
+        grid.appendChild(div);
+      });
+    };
+  }
+
+  function deleteGalleryItem(id) {
+    if (!db) return;
+    const tx = db.transaction('gallery', 'readwrite');
+    tx.objectStore('gallery').delete(id);
+    tx.oncomplete = () => renderGallery();
+  }
+
+  function saveMemory(text, extraData = {}) {
+    if (!db) return;
+    const memory = {
+      text: text,
+      timestamp: new Date().toLocaleTimeString('pt-BR'),
+      date: new Date().toLocaleDateString('pt-BR'),
+      extra: extraData
+    };
+    const tx = db.transaction('memories', 'readwrite');
+    tx.objectStore('memories').add(memory);
+    tx.oncomplete = () => renderMemories();
+  }
+
+  function renderMemories() {
+    if (!db) return;
+    const list = document.getElementById('memoryList');
+    list.innerHTML = '';
+    const tx = db.transaction('memories', 'readonly');
+    tx.objectStore('memories').getAll().onsuccess = (e) => {
+      const items = e.target.result.reverse();
+      items.forEach(mem => {
+        const div = document.createElement('div');
+        div.className = 'memory';
+        div.innerHTML = `<strong>[${mem.date} ${mem.timestamp}]</strong> ${mem.text}`;
+        list.appendChild(div);
+      });
+    };
+  }
+
+  /* -------------------------------------------------------
+     CÂMERA, FOTO, VÍDEO E FLASH
+  ------------------------------------------------------- */
+  async function startCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+    }
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facingMode },
+        audio: false
+      });
+      document.getElementById('camera').srcObject = cameraStream;
+      activeSensors.camera = true;
+      updateSensorPill();
+
+      // Checa suporte a Flash (Torch)
+      const track = cameraStream.getVideoTracks()[0];
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      document.getElementById('torchButton').style.opacity = caps.torch ? '1' : '0.4';
+
+      // Fallback da Luz via Câmera
+      initCameraLightFallback();
+
+    } catch (e) {
+      showToast('Câmera indisponível ou permissão negada.');
+      activeSensors.camera = false;
+      updateSensorPill();
+    }
+  }
+
+  function toggleCamera() {
+    facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+    startCamera();
+  }
+
+  async function toggleTorch() {
+    if (!cameraStream) return;
+    const track = cameraStream.getVideoTracks()[0];
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (caps.torch) {
+      torchActive = !torchActive;
+      await track.applyConstraints({ advanced: [{ torch: torchActive }] });
+      showToast(torchActive ? 'Flash Ligado' : 'Flash Desligado');
+    } else {
+      showToast('Flash indisponível nesta câmera.');
+    }
+  }
+
+  function takePhoto() {
+    if (!cameraStream) return;
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('cameraCanvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      saveToGallery({ type: 'photo', blob: blob, timestamp: new Date().toISOString() });
+    }, 'image/jpeg', 0.88);
+  }
+
+  function toggleRecord() {
+    const btn = document.getElementById('captureButton');
+    if (!isRecording) {
+      if (!cameraStream) return;
+      recordedChunks = [];
+      const types = ['video/webm;codecs=vp9', 'video/webm', 'video/mp4'];
+      let selectedType = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+      
+      try {
+        mediaRecorder = new MediaRecorder(cameraStream, selectedType ? { mimeType: selectedType } : {});
+      } catch (err) {
+        showToast('Gravação de vídeo não suportada.');
+        return;
+      }
+
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: selectedType || 'video/webm' });
+        saveToGallery({ type: 'video', blob: blob, timestamp: new Date().toISOString() });
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      btn.classList.add('recording');
+      showToast('Gravando vídeo...');
+    } else {
+      mediaRecorder.stop();
+      isRecording = false;
+      btn.classList.remove('recording');
+    }
+  }
+
+  /* -------------------------------------------------------
+     FALLBACK DE LUZ VIA CANVAS DA CÂMERA
+  ------------------------------------------------------- */
+  function initCameraLightFallback() {
+    setInterval(() => {
+      if (!cameraStream || activeSensors.lightHardware) return;
+      const video = document.getElementById('camera');
+      if (video.readyState !== 4) return;
+
+      const canvas = document.getElementById('cameraCanvas');
+      canvas.width = 30; canvas.height = 30;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, 30, 30);
+      const imgData = ctx.getImageData(0, 0, 30, 30).data;
+      
+      let sum = 0;
+      for (let i = 0; i < imgData.length; i += 4) {
+        sum += (imgData[i] + imgData[i+1] + imgData[i+2]) / 3;
+      }
+      const avg = sum / (30 * 30);
+      normLight = avg / 255;
+      
+      const perc = Math.round(normLight * 100);
+      document.getElementById('lightValue').innerHTML = `${perc}% <span style="font-size:12px;color:var(--yellow);">(estimado)</span>`;
+      document.getElementById('lightStatus').textContent = 'Luminância calculada por amostragem visual.';
+      document.getElementById('markerLightValue').textContent = `${perc}% est.`;
+      
+      activeSensors.light = true;
+      updateSensorPill();
+    }, 1000);
+  }
+
+  /* -------------------------------------------------------
+     ÁUDIO SEPARADO E ANÁLISE ESPECTRAL
+  ------------------------------------------------------- */
+  async function toggleAudio() {
+    const btn = document.getElementById('audioButton');
+    if (!audioStream) {
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        micSource = audioContext.createMediaStreamSource(audioStream);
+        
+        analyser.fftSize = 64;
+        micSource.connect(analyser);
+
+        activeSensors.audio = true;
+        updateSensorPill();
+        btn.textContent = 'DESATIVAR MICROFONE';
+        document.getElementById('audioStatus').textContent = 'Analisando amplitude acústica relativa.';
+
+        // Waveform
+        const waveContainer = document.getElementById('waveform');
+        waveContainer.innerHTML = '';
+        for (let i = 0; i < 16; i++) {
+          const w = document.createElement('div');
+          w.className = 'wave';
+          waveContainer.appendChild(w);
+        }
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        function renderWave() {
+          if (!audioStream) return;
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          const waves = waveContainer.children;
+          for (let i = 0; i < waves.length; i++) {
+            const val = dataArray[i] || 0;
+            sum += val;
+            waves[i].style.height = `${Math.max(4, (val / 255) * 40)}px`;
+          }
+          const avg = sum / dataArray.length;
+          normAudio = Math.min(avg / 128, 1.0);
+          const relPerc = Math.round(normAudio * 100);
+          document.getElementById('audioValue').innerHTML = `${relPerc}% <span style="font-size:12px;color:var(--yellow);">(relativo)</span>`;
+          document.getElementById('markerSoundValue').textContent = `${relPerc}%`;
+
+          requestAnimationFrame(renderWave);
+        }
+        renderWave();
+
+      } catch (err) {
+        showToast('Microfone indisponível ou bloqueado.');
+      }
+    } else {
+      audioStream.getTracks().forEach(t => t.stop());
+      audioStream = null;
+      if (audioContext) audioContext.close();
+      activeSensors.audio = false;
+      normAudio = 0;
+      updateSensorPill();
+      btn.textContent = 'ATIVAR MICROFONE';
+      document.getElementById('audioValue').textContent = '--';
+      document.getElementById('audioStatus').textContent = 'Microfone inativo.';
+      document.getElementById('markerSoundValue').textContent = '--';
+    }
+  }
+
+  /* -------------------------------------------------------
+     MOVIMENTO & INÉRCIA (devicemotion)
+  ------------------------------------------------------- */
+  function initMovement() {
+    if (window.DeviceMotionEvent) {
+      window.addEventListener('devicemotion', (e) => {
+        const acc = e.accelerationIncludingGravity;
+        if (acc && acc.x !== null) {
+          document.getElementById('motionX').textContent = acc.x.toFixed(1);
+          document.getElementById('motionY').textContent = acc.y.toFixed(1);
+          document.getElementById('motionZ').textContent = acc.z.toFixed(1);
+
+          const mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+          document.getElementById('motionMag').textContent = mag.toFixed(1);
+          
+          normMovement = Math.min(Math.abs(mag - 9.8) / 10, 1.0);
+          document.getElementById('motionStatus').textContent = 'Telemetria inercial ativa.';
+          document.getElementById('markerMovementValue').textContent = `${mag.toFixed(1)} m/s²`;
+
+          activeSensors.movement = true;
+          updateSensorPill();
+        }
+      });
+      showToast('Acelerômetro ativado.');
+    } else {
+      document.getElementById('motionStatus').textContent = 'Sensor de movimento não suportado.';
+    }
+  }
+
+  /* -------------------------------------------------------
+     ORIENTAÇÃO & BÚSSOLA ESTIMADA (deviceorientation)
+  ------------------------------------------------------- */
+  function initOrientation() {
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', (e) => {
+        if (e.alpha !== null) {
+          const heading = e.webkitCompassHeading || (360 - e.alpha);
+          document.getElementById('headingValue').innerHTML = `${heading.toFixed(0)}° <span style="font-size:12px;color:var(--yellow);">(estimado)</span>`;
+          document.getElementById('headingStatus').textContent = `α:${e.alpha.toFixed(0)}° β:${e.beta.toFixed(0)}° γ:${e.gamma.toFixed(0)}°`;
+          
+          activeSensors.orientation = true;
+          updateSensorPill();
+        }
+      });
+      showToast('Orientação ativada.');
+    } else {
+      document.getElementById('headingStatus').textContent = 'Sensor de orientação não suportado.';
+    }
+  }
+
+  /* -------------------------------------------------------
+     GPS & BATERIA
+  ------------------------------------------------------- */
+  function initGPS() {
+    if (!navigator.geolocation) {
+      document.getElementById('gpsValue').textContent = 'Indisponível';
+      return;
+    }
+    document.getElementById('gpsValue').textContent = 'Buscando...';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(4);
+        const lon = pos.coords.longitude.toFixed(4);
+        document.getElementById('gpsValue').textContent = `${lat}, ${lon}`;
+        activeSensors.gps = true;
+        updateSensorPill();
+      },
+      (err) => {
+        document.getElementById('gpsValue').textContent = 'Erro de sinal';
+      },
+      { enableHighAccuracy: true }
+    );
+  }
+
+  function initBattery() {
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(bat => {
+        const update = () => {
+          const level = Math.round(bat.level * 100);
+          const charging = bat.charging ? '⚡' : '';
+          document.getElementById('batteryValue').textContent = `${level}% ${charging}`;
+        };
+        update();
+        bat.onlevelchange = update;
+        bat.onchargingchange = update;
+      });
+    } else {
+      document.getElementById('batteryValue').textContent = 'N/A';
+    }
+  }
+
+  /* -------------------------------------------------------
+     MOTOR CROSS-MODAL REAL (EMA: Exponential Moving Average)
+  ------------------------------------------------------- */
+  function runCrossModalEngine() {
+    // Cálculo do Stress Raw: 0.4*Audio + 0.3*Light + 0.3*Movement
+    const stressRaw = (0.4 * normAudio) + (0.3 * normLight) + (0.3 * normMovement);
+
+    // EMA: 0.7*EMA_anterior + 0.3*stress_raw
+    emaStress = (0.7 * emaStress) + (0.3 * stressRaw);
+
+    const indexVal = emaStress.toFixed(2);
+    document.getElementById('crossIndex').textContent = indexVal;
+
+    const percBar = Math.min(Math.round(emaStress * 100), 100);
+    document.getElementById('crossProgress').style.width = `${percBar}%`;
+
+    const label = document.getElementById('crossLabel');
+    if (emaStress < 0.25) {
+      label.textContent = 'ESTÁVEL / AMBIENTE CALMO';
+      label.className = 'badge ok';
+    } else if (emaStress < 0.60) {
+      label.textContent = 'ESTÍMULO MODERADO';
+      label.className = 'badge warn';
+    } else {
+      label.textContent = 'ALTA CARGA SENSORIAL';
+      label.className = 'badge error';
+    }
+
+    document.getElementById('crossLog').textContent = 
+      `Sincronizado [${new Date().toLocaleTimeString()}]. Algoritmo EMA aplicando atenuação de ruído inercial.`;
+  }
+
+  /* -------------------------------------------------------
+     ESTIVE AQUI - SNAPSHOT MULTINODAL COMPLETO
+  ------------------------------------------------------- */
+  function triggerEstiveAqui() {
+    if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
+    
+    // Tira foto automática de contexto se a câmera estiver pronta
+    takePhoto();
+
+    // Captura telemetria multinodal
+    const timestamp = new Date().toLocaleTimeString('pt-BR');
+    const snapshotText = `📍 ESTIVE AQUI [${timestamp}] | Stress EMA: ${emaStress.toFixed(2)} | GPS: ${document.getElementById('gpsValue').textContent} | Luz: ${Math.round(normLight*100)}% | Áudio: ${Math.round(normAudio*100)}%`;
+
+    saveMemory(snapshotText, {
+      crossIndex: emaStress,
+      audioNorm: normAudio,
+      lightNorm: normLight,
+      movementNorm: normMovement
+    });
+
+    showToast('Snapshot "ESTIVE AQUI" salvo com foto e telemetria!');
+  }
+
+  /* -------------------------------------------------------
+     DITADO POR VOZ
+  ------------------------------------------------------- */
+  function startVoiceNote() {
+    const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Speech) return showToast('Reconhecimento de voz não suportado neste navegador.');
+    
+    const rec = new Speech();
+    rec.lang = 'pt-BR';
+    rec.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      document.getElementById('noteInput').value = text;
+      showToast('Voz convertida em texto!');
+    };
+    rec.start();
+  }
+
+  /* -------------------------------------------------------
+     EVENTOS E BINDINGS DA INTERFACE
+  ------------------------------------------------------- */
+  document.getElementById('startButton').onclick = () => {
+    document.getElementById('startGate').classList.add('hidden');
+    startCamera();
+    initGPS();
+    initBattery();
+    setInterval(runCrossModalEngine, 800);
+  };
+
+  document.getElementById('flipButton').onclick = toggleCamera;
+  document.getElementById('torchButton').onclick = toggleTorch;
+
+  // Painel do Laboratório
+  const labPanel = document.getElementById('labPanel');
+  document.getElementById('labButton').onclick = () => labPanel.classList.remove('hidden');
+  document.getElementById('labQuickButton').onclick = () => labPanel.classList.remove('hidden');
+  document.getElementById('closeLabButton').onclick = () => labPanel.classList.add('hidden');
+
+  // Galeria
+  const galleryPanel = document.getElementById('galleryPanel');
+  document.getElementById('galleryButton').onclick = () => galleryPanel.classList.remove('hidden');
+  document.getElementById('closeGalleryButton').onclick = () => galleryPanel.classList.add('hidden');
+
+  // Ativação manual de sensores
+  document.getElementById('audioButton').onclick = toggleAudio;
+  document.getElementById('motionButton').onclick = initMovement;
+  document.getElementById('orientationButton').onclick = initOrientation;
+  document.getElementById('gpsButton').onclick = initGPS;
+
+  // Botões do Botton Nav (Modos)
+  const modePhoto = document.getElementById('photoMode');
+  const modeHere = document.getElementById('hereMode');
+  const modeVideo = document.getElementById('videoMode');
+
+  function setMode(mode) {
+    currentMode = mode;
+    [modePhoto, modeHere, modeVideo].forEach(b => b.classList.remove('active'));
+    if (mode === 'photo') modePhoto.classList.add('active');
+    if (mode === 'here') modeHere.classList.add('active');
+    if (mode === 'video') modeVideo.classList.add('active');
+  }
+
+  modePhoto.onclick = () => setMode('photo');
+  modeHere.onclick = () => setMode('here');
+  modeVideo.onclick = () => setMode('video');
+
+  // Botão de Captura Central
+  document.getElementById('captureButton').onclick = () => {
+    if (currentMode === 'photo') takePhoto();
+    else if (currentMode === 'video') toggleRecord();
+    else if (currentMode === 'here') triggerEstiveAqui();
+  };
+
+  // Vibração
+  document.getElementById('vibrateButton').onclick = () => {
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100, 50, 200]);
+      showToast('Atuador Háptico acionado.');
+    } else {
+      showToast('Vibração não suportada.');
+    }
+  };
+
+  // Salvamento de Notas
+  document.getElementById('saveNoteButton').onclick = () => {
+    const input = document.getElementById('noteInput');
+    if (input.value.trim()) {
+      saveMemory(`📝 ${input.value.trim()}`);
+      input.value = '';
+      showToast('Nota sensorial gravada!');
+    }
+  };
+
+  document.getElementById('voiceNoteButton').onclick = startVoiceNote;
+
+  // Inicialização do banco de dados ao carregar
+  initDB();
+
+})();
+</script>
+
+</body>
+</html>
+
 
     stopCamera();
 
